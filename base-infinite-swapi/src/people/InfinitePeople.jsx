@@ -1,4 +1,5 @@
 import InfiniteScroll from "react-infinite-scroller";
+import { useInfiniteQuery } from "react-query";
 import { Person } from "./Person";
 
 const initialUrl = "https://swapi.dev/api/people/";
@@ -8,6 +9,37 @@ const fetchUrl = async (url) => {
 };
 
 export function InfinitePeople() {
-  // TODO: get data for InfiniteScroll via React Query
-  return <InfiniteScroll />;
+  const { data, fetchNextPage, hasNextPage, isLoading, isError, error, isFetchingNextPage} = useInfiniteQuery(
+    ["sw-people"],
+    ({ pageParam = initialUrl }) => fetchUrl(pageParam),
+    {
+      getNextPageParam: (lastPage) => lastPage.next || undefined,
+    }
+  );
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    return <div>Error: {error.toString()}</div>;
+  }
+
+  return <InfiniteScroll data={data} hasMore={hasNextPage} loadMore={fetchNextPage}>
+    <>
+    {data.pages.map((pageData) => {
+      return pageData.results.map((person) => {
+        return (
+          <Person
+            key={person.name}
+            name={person.name}
+            eyeColor={person.eye_color}
+            hairColor={person.hair_color}
+          />)
+      });
+      })
+    }
+    {isFetchingNextPage && <div>Loading more...</div>}
+    </>
+  </InfiniteScroll>;
 }
